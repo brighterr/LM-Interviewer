@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>量表上传</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='create.css')}}">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <textarea id="scaleInput" rows="10" cols="50"></textarea>
+    <br>
+    <div class="button-container">
+        <div class="confirm-button-container">
+            <button id="confirmButton">确认</button>
+        </div>
+        <div class="preset-buttons-container">
+            <button class="presetButton" id="presetButton-1" data-text="预设文本1">预设量表-1</button>
+            <button class="presetButton" id="presetButton-2" data-text="预设文本2">预设量表-2</button>
+            <!-- <button class="presetButton" data-text="预设文本3">预设文本3</button> -->
+        </div>
+    </div>
+    <p id="outputText"></p>
+    
+
+    <script>
+        $('#confirmButton').click(function() {
+            var scale = $('#scaleInput').val();
+            $.ajax({
+                url: '/create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({scale: scale}),
+                success: function(response) {
+                    
+                    $('#outputText').html(`访谈链接：<a id="interviewLink" href="#">点击这里</a><br>结果链接：<a id="resultsLink" href="#">点击这里</a>${response.analysis}`);
+
+                    interviewLink = `https://103.238.162.34:20503/interview?scale=${response.interview_link}`;
+                    resultsLink = `https://103.238.162.34:20503/results?id=${response.results_link}`;
+                    $('#interviewLink').attr('href', interviewLink).text(interviewLink);
+                    $('#resultsLink').attr('href', resultsLink).text(resultsLink);
+
+                }
+            });
+        });
+
+        $('#presetButton-1').click(function() {
+            $('#scaleInput').val("在读书之前，我常常先浏览全书，看它们是怎样编排的\n我努力确保我理解我正在学习的东西\n如果在学习课程内容时遇到了困难，我会寻求帮助")
+        })
+        $('#presetButton-2').click(function() {
+            $('#scaleInput').val("在读书之前，我常常先浏览全书，看它们是怎样编排的\n我努力确保我理解我正在学习的东西\n如果在学习课程内容时遇到了困难，我会寻求帮助\n当我学习课程内容时，我首先挑出最重要的部分\n我尽最大努力制订好学习计划\n如果我对课程内容有疑问，我会翻到前面再看，努力把它们弄明白\n我努力找出在课程内容的哪些地方我还没有理解\n我学习的方法是，给自己提问来检查我是否理解我正在学习的东西\n如果我对我在学校里学的东西有疑问，我会过后再看，努力弄明白它们\n我事先计划，这样我才能好好学习\n在阅读过程中，我检查我是否理解前面读过的东西\n如果我不理解课程内容的某些地方，我会翻到前面再学一遍\n在开始学习之前，我首先努力找出，在我必须学的课程内容中，哪些部分是最重要的\n我努力找出在课程内容的哪些地方我掌握得不好\n如果我不理解所学习的某些东西，我请别人帮助我")
+        })
+    </script>
+</body>
+</html>

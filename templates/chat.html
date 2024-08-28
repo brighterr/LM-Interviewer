@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>Chatbot</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap_min.css')}}"/>
+		<link rel="stylesheet" href="{{ url_for('static', filename='all.css')}}"/>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}"/>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='loading.css')}}"/>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='scroller.css')}}"/>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='button.css')}}"/>
+		<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+	</head>
+	
+	
+	<body>
+		<div class="container-fluid h-100">
+			<div class="row justify-content-center h-100">
+
+				<!-- <div class="col-md-8 col-xl-6 chat"> -->
+				<div class="col-md-8 chat">
+
+					<div class="card">
+						<div class="card-header msg_head">
+							<div class="d-flex bd-highlight">
+								<div class="img_cont">
+									<img src="https://i.ibb.co/fSNP7Rz/icons8-chatgpt-512.png" class="rounded-circle user_img">
+									<span class="online_icon"></span>
+								</div>
+								<div class="user_info">
+									<span>实验 ID: {{experiment_id}}</span>
+									<p>Hi! I'm Interviewer System</p>
+								</div>
+							</div>
+						</div>
+
+						<div id="messageFormeight" class="card-body msg_card_body">
+						</div>
+
+						<div class="card-footer">
+							<form id="messageArea" class="input-group">
+                                <!-- <input type="text" id="text" name="msg" placeholder="输入回答..." autocomplete="off" class="form-control type_msg" required/> -->
+                                <textarea type="text" id="text" name="msg" placeholder="输入回答..." autocomplete="off" class="form-control type_msg" required></textarea>
+								<div class="input-group-append">
+									<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></button>
+									<button type="button" id="record" class="input-group-text record_btn"><i class="fas fa-microphone"></i></button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+
+			</div>
+        </div>
+        
+		<script>
+			function getStrTime() {
+				const date = new Date();
+				let hour = date.getHours();
+				let minute = date.getMinutes();
+				hour = hour < 10 ? '0' + hour : hour;
+				minute = minute < 10 ? '0' + minute : minute;
+				return strTime = hour + ":" + minute;
+			}
+
+			function getModelHtml(msg) {
+				return '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://i.ibb.co/fSNP7Rz/icons8-chatgpt-512.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + msg + '<span class="msg_time">' + getStrTime() + '</span></div></div>';
+			}
+
+			function getUserHtml(msg) {
+				return '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + msg + '<span class="msg_time_send">'+ getStrTime() + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
+			}
+
+			function appendLoading() {
+				$("#messageFormeight").append($.parseHTML(getModelHtml('<div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>')));
+			}
+
+			function sendAndReceive(msg) {
+				appendLoading();
+				$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+
+				$.ajax({
+						data: {
+							msg: msg,	
+						},
+						type: "POST",
+						url: "/get",
+						xhrFields: {
+							responseType: 'arraybuffer'
+						},
+					}).done(function(arrayBuffer) {
+						const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+						audioContext.decodeAudioData(arrayBuffer, function(audioBuffer){
+							const source = audioContext.createBufferSource();
+							source.buffer = audioBuffer;
+							source.connect(audioContext.destination);
+							source.start();
+
+							$.ajax({
+							type: "GET",
+							url: "/model-response",
+							}).done(function(data) {
+								let modelRawMsg = data["modelMsg"];
+								console.log('get model response:', modelRawMsg, typeof(modelRawMsg));
+								modelRawMsg = modelRawMsg.replace(/\n/g, "<br>");
+								const modelHtml = getModelHtml(modelRawMsg);
+								
+								$("#messageFormeight").children("div").last().replaceWith($.parseHTML(modelHtml));
+								$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+							})
+						});
+					});
+			}
+
+			$(function() {
+				let locked = true;
+				let started = false;
+
+				const initialMsg = '感谢你参加访谈机器人的测试！我是一个访谈机器人，主要就你在MAIC课程中的体验与感受对你进行访谈，期待你的反馈！下面我会问你一些关于你学习体验和互动感受的问题，请真实陈述你的经历，自由表达你的意见和想法。我不会采集你的个人信息，所有回答内容仅用于本访谈系统的能力提升和相关研究。你的回答没有好坏正误之分，且都是匿名的，保证不会泄露给研究团队之外的任何人。在过程中可以随时退出对话，不需要承担任何其他后果。访谈全程大概需要30-60分钟。\n你准备好开始访谈了吗？';
+				const initialModelHtml = getModelHtml(initialMsg);
+				$("#messageFormeight").append($.parseHTML(initialModelHtml));
+				
+				// "I'm ready" button
+				$("#messageFormeight").append($.parseHTML('<button id="readyButton" class="button-17" role="button">我准备好了！</button>'));
+
+
+				$('#text').keydown(function(event) {
+					if (event.key === "Enter" && !event.shiftKey && !locked) {
+						event.preventDefault();
+						$('#messageArea').submit();
+					}
+				});
+
+				$('#readyButton').click(function() {
+					if (started) return;
+					sendAndReceive('1');
+					started = true;
+					locked = false;
+				})
+
+				$("#messageArea").on("submit", function(event) {
+					event.preventDefault();
+
+					if (locked) {
+						console.log('locked');
+						return;
+					}
+					locked = true;
+
+					const userMsg = $('#text').val();
+					$("#text").val("");
+					const userHtml = getUserHtml(userMsg);
+					$("#messageFormeight").append(userHtml);
+
+					modelHtml = sendAndReceive(userMsg);
+
+					locked = false;
+				});
+				
+				// ASR -----------------------------------------------------------------------
+				
+				console.log(window.location.protocol);
+				let socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
+				let audioContext;
+				let isRecording = false;
+				let stream;
+				let audioChunks = [];
+
+				function handleAudioStream(stream) {
+
+					$('#record').css('background-color', 'red');
+
+					mediaRecorder = new MediaRecorder(stream);
+					mediaRecorder.start();
+
+					mediaRecorder.ondataavailable = function(e) {
+						console.log(e.data);
+						let blob = e.data;
+
+						socket.emit('audio_data', blob);
+						chunks = []
+					};
+				}
+
+				function stopRecording() {
+					$('#record').css('background-color', '');
+					
+					mediaRecorder.stop();
+					mediaRecorder.stream.getTracks().forEach(track => track.stop());
+					isRecording = false;
+
+					$(this).css('background-color', '');
+					isRecording = false;
+				}
+
+				$("#record").click(function() {
+					if (isRecording) {
+						stopRecording();
+					} else {
+						navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+							.then(streamObj => {
+								stream = streamObj;
+								handleAudioStream(stream);
+								isRecording = true;
+							})
+							.catch(function(err) {
+								console.error('Error: getUserMedia', err);
+							});
+					}
+					
+				});
+				
+				socket.on('response', function(msg) {
+					console.log(msg.data);
+					text_val = $('#text').val();
+					$('#text').val($('#text').val() + msg.data)
+				});
+			
+			});
+
+		</script>
+
+    </body>
+</html>

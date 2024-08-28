@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>访谈结果</title>
+    <link rel="stylesheet" type="text/css" href="/static/results.css">
+</head>
+<body>
+    <ul>
+        {% for result in results %}
+        <li>
+            <div class="time"><span>访谈id: </span>{{ result.interview_id }}</div>
+            <div class="time"><span>开始时间：</span>{{ result.time_begin }}</div>
+            <div class="time"><span>结束时间：</span>{{ result.time_end }}</div>
+            <div class="report"><label>访谈报告：</label>{{ result.report }}</div>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

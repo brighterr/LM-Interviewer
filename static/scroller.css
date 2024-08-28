@@ -1,0 +1,28 @@
+#text {
+    resize: none;
+}
+
+#text::-webkit-scrollbar, #messageFormeight::-webkit-scrollbar {
+    width: 12px;
+}
+
+#text::-webkit-scrollbar-track, #messageFormeight::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 1px;
+}
+
+#text::-webkit-scrollbar-thumb, #messageFormeight::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5.5px;
+
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+#text::-webkit-scrollbar-thumb:hover, #messageFormeight::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    border-radius: 5.5px;
+
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
