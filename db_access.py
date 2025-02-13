@@ -49,7 +49,10 @@ def get_scale_by_scale_id(scale_id):
         'SELECT scale FROM scales WHERE scale_id = ?',
         (scale_id,)
     )
-    return c.fetchone()[0]
+    result = c.fetchone()
+    if result:  # 如果查询返回了结果
+        return result[0]
+    return None  # 如果没有结果，返回 None
 
 
 def update_analysis(scale_id, analysis):
@@ -71,10 +74,11 @@ def get_analysis_by_scale_id(scale_id):
         'SELECT analysis FROM scales WHERE scale_id = ?',
         (scale_id,)
     )
-    analysis = c.fetchone()[0]
-    if analysis is not None:
-        analysis = json.loads(analysis)
-    return analysis
+    result = c.fetchone()
+    if result and result[0]:  # 确保返回的结果非空
+        analysis = json.loads(result[0])
+        return analysis
+    return None
 
 
 def get_scale_id_by_results_id(results_id):
